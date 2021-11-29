@@ -19,6 +19,7 @@ import { profile } from "../../store/profile.js";
 import { authentication } from "../../store/authentication";
 import { Loader } from "../../utils/Loader";
 import { error } from "../../store/error";
+import { api } from "../../utils/api";
 export const Profile = observer(({ navigation }) => {
   const [is_vivble_change_password_modal, SetIsVisibleChangePasswordModal] =
     useState(false);
@@ -213,6 +214,9 @@ const ChangePasswordModal = ({ is_visible, SetIsVisible }) => {
   const [verification_code, SetVerificationCode] = useState("");
   const [new_password, SetNewPassword] = useState("");
   const [new_password_repeat, SetNewPasswordRepeat] = useState("");
+  useEffect(() => {
+    if (is_visible) api.password_change_request(authentication.email);
+  }, [is_visible]);
   let is_button_disabled =
     verification_code && new_password && new_password == new_password_repeat;
   return (

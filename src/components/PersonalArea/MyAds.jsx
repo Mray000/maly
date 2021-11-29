@@ -10,6 +10,8 @@ import {
   Button,
   TouchableOpacity,
 } from "react-native";
+import { api } from "../../utils/api";
+import { Loader } from "../../utils/Loader";
 export const MyAds = ({ navigation }) => {
   let ads = [
     {
@@ -25,7 +27,40 @@ export const MyAds = ({ navigation }) => {
       address: "Мое сердце",
     },
   ];
+  const [active_ads, SetActiveAds] = useState(null);
+  const [checking_ads, SetCheckingAds] = useState(null);
+  const [archived_ads, SetArchivedAds] = useState(null);
   const [ads_type, SetAdsType] = useState("active");
+  let ads_to_show = null;
+  switch (ads_type) {
+    case "active":
+      ads_to_show = active_ads;
+    case "on_check":
+      ads_to_show = checking_ads;
+    case "archive":
+      ads_to_show = archived_ads;
+  }
+  useEffect(() => {
+    api.getAds().then((data) => {
+      let active_ads = [];
+      let checking_ads = [];
+      let archived_ads = [];
+      data.forEach((ad) => {
+        switch (ad.idAdStatus) {
+          case 1:
+            active_ads.push(ad);
+          case 2:
+            checking_ads.push(ad);
+          case 3:
+            archived_ads.push(ad);
+        }
+        SetActiveAds(active_ads);
+        SetCheckingAds(checking_ads);
+        SetActiveAds(active_ads);
+      });
+    });
+  }, []);
+  if (!ads_to_show) return <Loader />;
   return (
     <View
       style={{
@@ -51,9 +86,6 @@ export const MyAds = ({ navigation }) => {
           style={{
             fontSize: 18,
             textAlign: "center",
-            // width: "auto",
-            // width: "90%",
-            // textAlign: "auto",
             marginRight: "auto",
             marginLeft: "auto",
             color: "#F6A405",
@@ -100,61 +132,57 @@ export const MyAds = ({ navigation }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={
-            ads_type == "not_approved" ? styles.ad_type_active : styles.ad_type
+            ads_type == "acrchive" ? styles.ad_type_active : styles.ad_type
           }
-          onPress={() => SetAdsType("not_approved")}
+          onPress={() => SetAdsType("acrchive")}
         >
           <Text
             style={{
               textAlign: "center",
-              color: ads_type == "not_approved" ? "white" : "#7B7B7B",
+              color: ads_type == "acrchive" ? "white" : "#7B7B7B",
             }}
           >
             Архив
           </Text>
         </TouchableOpacity>
       </View>
-      {ads_type == "active" ? (
-        <View style={{ marginTop: 10 }}>
-          {ads.map((ad) => {
-            return (
+      <View style={{ marginTop: 10 }}>
+        {ads_to_show.map((ad) => {
+          return (
+            <View
+              key={ad.img}
+              style={{ flexDirection: "row", height: 60, marginTop: 10 }}
+            >
+              <Image
+                source={{ uri: ad.img }}
+                style={{ width: 60, height: 60, borderRadius: 15 }}
+              />
               <View
-                key={ad.img}
-                style={{ flexDirection: "row", height: 60, marginTop: 10 }}
+                style={{
+                  justifyContent: "center",
+                  height: 60,
+                  marginLeft: 20,
+                }}
               >
-                <Image
-                  source={{ uri: ad.img }}
-                  style={{ width: 60, height: 60, borderRadius: 15 }}
-                />
-                <View
-                  style={{
-                    justifyContent: "center",
-                    height: 60,
-                    marginLeft: 20,
-                  }}
-                >
-                  <Text style={{ fontSize: 16, fontFamily: "LatoMedium" }}>
-                    {ad.title}
-                  </Text>
-                  <Text
-                    style={{ fontFamily: "LatoSemibold", fontWeight: "700" }}
-                  >
-                    {ad.much} руб.
-                  </Text>
-                </View>
+                <Text style={{ fontSize: 16, fontFamily: "LatoMedium" }}>
+                  {ad.title}
+                </Text>
+                <Text style={{ fontFamily: "LatoSemibold", fontWeight: "700" }}>
+                  {ad.much} руб.
+                </Text>
               </View>
-            );
-          })}
-        </View>
-      ) : null}
-      {/* <TouchableOpacity
+            </View>
+          );
+        })}
+      </View>
+      <TouchableOpacity
         onPress={() => navigation.navigate("NewAd")}
         style={styles.button}
       >
         <Text style={{ color: "white", fontSize: 18, textAlign: "center" }}>
           Разместить объявление
         </Text>
-      </TouchableOpacity> */}
+      </TouchableOpacity>
     </View>
   );
 };
