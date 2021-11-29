@@ -17,6 +17,8 @@ import { ad } from "../../store/ad";
 import { Loader } from "../../utils/Loader";
 import { api } from "../../utils/api";
 import { observer } from "mobx-react-lite";
+import { authentication } from "../../store/authentication";
+import { Authentication } from "../Authentication/Authentication";
 
 export const NewAd = observer(({ navigation }) => {
   const [is_animals, SetIsAnimals] = useState(true);
@@ -40,6 +42,11 @@ export const NewAd = observer(({ navigation }) => {
     }
   }, [ad.category_id]);
   // console.log(breeds, "99999999");
+  if (!authentication.is_auth) {
+    authentication.SetRedirect("NewAd");
+    navigation.navigate("Authentication");
+    return null;
+  }
   if (is_load) return <Loader />;
   return (
     <View>

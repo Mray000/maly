@@ -5,8 +5,18 @@ class Authentication {
   email = "";
   is_auth = false;
   role = null;
+  accessToken = "";
+  refreshToken = "";
+  redirect = "";
+
   constructor() {
     makeAutoObservable(this);
+  }
+  SetAccessToken(token) {
+    this.accessToken = token;
+  }
+  SetRefreshToken(token) {
+    this.refreshToken = token;
   }
   SetEmail(email) {
     this.email = email;
@@ -17,6 +27,9 @@ class Authentication {
   SetRole(role) {
     this.role = role;
   }
+  SetRedirect(to) {
+    this.redirect = to;
+  }
   async registration(email, password) {
     let data = await api.registration(email, password);
     if (data) this.SetEmail(email);
@@ -24,11 +37,6 @@ class Authentication {
   }
   async login(email, password) {
     let data = await api.login(email, password);
-    if (data) {
-      this.SetEmail(email);
-      this.SetRole(data.role);
-      this.SetIsAuth(true);
-    }
     return data;
   }
   async change_password(verificationCode, new_password) {
@@ -42,10 +50,6 @@ class Authentication {
   }
   async confirm_email(verificationCode) {
     let data = await api.confirm_email(this.email, verificationCode);
-    if (data) {
-      this.SetRole(data.role);
-      this.SetIsAuth(true);
-    }
     return data;
   }
 }

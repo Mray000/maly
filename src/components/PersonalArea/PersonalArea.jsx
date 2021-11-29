@@ -15,6 +15,10 @@ import { SafeAreaView, StatusBar, PlatformOSType } from "react-native";
 import { BottomNavigator } from "../../utils/BottomNavigator.jsx";
 import { authentication } from "../../store/authentication";
 export const PersonalArea = ({ navigation }) => {
+  if (!authentication.is_auth) {
+    authentication.SetRedirect("PersonalArea");
+    navigation.navigate("Authentication");
+  }
   return (
     <>
       <View style={{ backgroundColor: "white", flex: 1 }}>
@@ -61,14 +65,28 @@ export const PersonalArea = ({ navigation }) => {
             <Text style={{ fontSize: 18 }}>Профиль</Text>
             <SvgUri source={right} width="20" height="20" />
           </TouchableOpacity>
+          {authentication.role == 2 ? (
+            <>
+              <View style={{ height: 1, backgroundColor: "#E7E7E7" }} />
+              <TouchableOpacity
+                style={styles.link}
+                onPress={() => navigation.navigate("CheckAds")}
+              >
+                <Text style={{ fontSize: 18 }}>Проверка объявелний</Text>
+                <SvgUri source={right} width="20" height="20" />
+              </TouchableOpacity>
+            </>
+          ) : null}
+
           <View style={{ height: 1, backgroundColor: "#E7E7E7" }} />
           <TouchableOpacity
             style={{ height: 60, justifyContent: "center" }}
-            onPress={() => navigation.navigate("Authentication")}
+            onPress={() => {
+              authentication.SetRedirect("CatalogList");
+              navigation.navigate("Authentication");
+            }}
           >
-            <Text style={{ fontSize: 18 }}>
-              {authentication.is_auth ? "Выйти" : "Войти"}
-            </Text>
+            <Text style={{ fontSize: 18 }}>Выйти</Text>
           </TouchableOpacity>
         </View>
       </View>

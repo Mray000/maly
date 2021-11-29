@@ -20,6 +20,7 @@ import { useKeyboard } from "../../utils/KeyBoard";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { api } from "../../utils/api";
 import { Feather, Entypo } from "@expo/vector-icons";
+import { ad } from "../../store/ad";
 
 export const AdInfo = ({ navigation, route }) => {
   let avatar = null;
@@ -68,6 +69,28 @@ export const AdInfo = ({ navigation, route }) => {
   useEffect(() => {
     api.getCities().then(SetCities);
   }, []);
+
+  const Continue = async () => {
+    if (!is_last) SetCurrentIndex(current_index + 1);
+    else {
+      let ad_id = await ad.createAd(
+        title,
+        description,
+        photos,
+        from,
+        youtube,
+        price,
+        sex,
+        age,
+        city,
+        name,
+        phone,
+        whatsapp
+      );
+
+      navigation.navigate("Ad", { id: ad_id });
+    }
+  };
   const CheckValid = () => {
     return (
       [
@@ -447,28 +470,7 @@ export const AdInfo = ({ navigation, route }) => {
         <View style={{ padding: 15 }}>
           <TouchableOpacity
             disabled={!CheckValid()}
-            onPress={() => {
-              if (!is_last) SetCurrentIndex(current_index + 1);
-              else {
-                let ad = {
-                  title,
-                  description,
-                  photos,
-                  from,
-                  youtube,
-                  price,
-                  sex,
-                  age,
-                  city,
-                  name,
-                  phone,
-                  whatsapp,
-                  ...route.params,
-                };
-
-                navigation.navigate("MyAd", ad);
-              }
-            }}
+            onPress={Continue}
             style={[
               styles.button,
               {

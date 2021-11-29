@@ -33,7 +33,14 @@ export const Authentication = observer(({ navigation }) => {
       ? await authentication.registration(email, password)
       : await authentication.login(email, password);
     if (is_ok) {
-      navigation.navigate(is_registration ? "EmailConfirm" : "Catalog");
+      if (is_registration) navigation.navigate("EmailConfirm");
+      else {
+        if (authentication.redirect.substr(0, 2) == "Ad") {
+          navigation.navigate("Ad", {
+            id: Number(authentication.redirect.substr(2)),
+          });
+        } else navigation.navigate(authentication.redirect);
+      }
     }
     SetIsLoad(false);
   };

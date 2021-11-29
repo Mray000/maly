@@ -11,7 +11,14 @@ class Catalog {
     makeAutoObservable(this, null);
   }
   get GetAds() {
-    return api.getAds(this.AnimalCategories.id, this.AnimalBreed.id);
+    return api.getAds(
+      this.AnimalCategories.id,
+      this.AnimalBreed.id,
+      this.from,
+      this.city.id,
+      this.price_min,
+      this.price_max
+    );
   }
   SetFrom = (name) => {
     if (this.from.includes(name)) {

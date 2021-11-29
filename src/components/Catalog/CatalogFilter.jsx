@@ -25,10 +25,21 @@ export const CatalogFilter = observer(({ navigation, route }) => {
   const [is_visible_city_modal, SetIsVisibleCityModal] = useState(false);
   const [cities, SetCities] = useState([]);
   const [breeds, SetBreeds] = useState([]);
+  const [ads, SetAds] = useState([]);
   useEffect(() => {
     api.getCities().then(SetCities);
     api.getBreeds(catalog.AnimalCategories.id).then(SetBreeds);
   }, []);
+
+  useEffect(() => {
+    catalog.GetAds().then(SetAds);
+  }, [
+    catalog.AnimalBreed,
+    catalog.city,
+    catalog.price_min,
+    catalog.price_max,
+    catalog.from,
+  ]);
   if (!cities.length || !breeds.length) return <Loader />;
   return (
     <View style={{ flex: 1 }}>
@@ -138,7 +149,7 @@ export const CatalogFilter = observer(({ navigation, route }) => {
             style={styles.button}
           >
             <Text style={{ color: "white", fontSize: 18, textAlign: "center" }}>
-              Показать 253 объявелния
+              Показать {ads.length} объявелния
             </Text>
           </TouchableOpacity>
         </View>
@@ -147,6 +158,7 @@ export const CatalogFilter = observer(({ navigation, route }) => {
         is_visible={is_visible_price_modal}
         CloseModal={() => SetIsVisiblePriceModal(false)}
         navigation={navigation}
+        ads_count={ads.length}
       />
       <BreedModal
         breeds={breeds}
@@ -163,7 +175,7 @@ export const CatalogFilter = observer(({ navigation, route }) => {
   );
 });
 
-const PriceModal = ({ is_visible, CloseModal, navigation }) => {
+const PriceModal = ({ is_visible, CloseModal, navigation, ads_count }) => {
   return (
     <Modal animated animationType="fade" visible={is_visible} transparent>
       <View style={styles.modal}>
@@ -234,7 +246,7 @@ const PriceModal = ({ is_visible, CloseModal, navigation }) => {
             style={styles.button}
           >
             <Text style={{ color: "white", fontSize: 18, textAlign: "center" }}>
-              Показать 129 объявелний
+              Показать {ads_count} объявелний
             </Text>
           </TouchableOpacity>
         </View>

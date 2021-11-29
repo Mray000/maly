@@ -27,65 +27,54 @@ import left_white from "../../assets/left_white.svg";
 import left from "../../assets/left.svg";
 import { api } from "../../utils/api";
 import { Loader } from "../../utils/Loader";
-export const Ad = ({ route, navigation }) => {
-  const [is_visible_mistake_form_modal, SetIsVisibletMistakeFormModal] =
-    useState(false);
-  const [is_visible_reject_form_modal, SetIsVisibletRejectFormModal] =
-    useState(false);
-  const [is_checking_ad, SetIsCheckingAd] = useState(false);
+import { authentication } from "../../store/authentication";
+import MapView from "react-native-maps";
 
-  const data = [
-    {
-      title: "Абиссинская кошка Моли",
-      price: 5000,
-      address: "Казань, Пушкина",
-      from: "Частное объявление",
-      photo:
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Kamee01.jpg/274px-Kamee01.jpg",
-    },
-    {
-      title: "Абиссинская кошка в добрые руки",
-      price: 0,
-      address: "Мосвка, Ленина",
-      from: "Питомник",
-      photo:
-        "https://house-animals.ru/sites/default/files/porody-koshek/abyssinian_cat_600_0.jpg",
-    },
-    {
-      title: "Абиссинские кошки Ванесса и Лиза",
-      price: 2000,
-      address: "Питер, Рорина",
-      from: "Магазин",
-      photo:
-        "https://litbro.ru/wp-content/uploads/2020/05/Uhod-za-abissinskim-kotenkom-1.jpg",
-    },
-    {
-      title: "Абиссинская кошка Кристина",
-      price: 3000,
-      address: "Питер, Рорина",
-      from: "Магазин",
-      photo:
-        "https://petstory.ru/resize/800x800x80/upload/images/articles/breeds/abissinskaya-koshka/abisin_cat_3.jpg",
-    },
-  ];
+export const Ad = ({
+  route: {
+    params: { id: id },
+  },
+  navigation,
+}) => {
+  const [is_visible_mistake_form_modal, SetIsVisibleMistakeFormModal] =
+    useState(false);
+  const [is_visible_reject_form_modal, SetIsVisibleRejectFormModal] =
+    useState(false);
+  const [ads, SetAds] = useState([]);
+  const [is_show_map, SetIsShowMap] = useState(false);
+  let is_my_ad = false;
+  let is_checking_ad = false;
+  let is_simple_ad = !is_my_ad && !is_checking_ad;
+
   let animals = [];
-  for (let i = 0; i < data.length; i += 2) {
-    animals.push([data[i], data[i + 1]]);
+  for (let i = 0; i < ads.length; i += 2) {
+    animals.push([ads[i], ads[i + 1]]);
   }
   const [ad, SetAd] = useState(null);
   const [photo_index, SetPhotoIndex] = useState(0);
+  const getStatusText = (statusId) => {
+    switch (statusId) {
+      case 1:
+        return "автивно";
+      case 2:
+        return "на проверке";
+      case 3:
+        return "в архиве";
+    }
+  };
   let dots = Array.from(Array(ad?.imagesPath?.length).keys());
   useEffect(() => {
-    api.getAd(route.params.id).then(SetAd);
+    api.getAd(id).then(SetAd);
+    api.getAds({ numberAds: 6 }).then(SetAds);
   }, []);
 
-  if (ad) {
+  if (ad && ads.length) {
     return (
       <>
         <ScrollView>
           <TouchableOpacity
             style={{
-              position: !is_checking_ad ? "absolute" : "relative",
+              position: is_simple_ad ? "absolute" : "relative",
               zIndex: 10000,
               padding: 10,
             }}
@@ -106,7 +95,7 @@ export const Ad = ({ route, navigation }) => {
               }}
             >
               <TouchableOpacity
-                onPress={() => SetIsVisibletRejectFormModal(true)}
+                onPress={() => SetIsVisibleRejectFormModal(true)}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -154,6 +143,85 @@ export const Ad = ({ route, navigation }) => {
                   Приянть
                 </Text>
               </TouchableOpacity>
+            </View>
+          ) : null}
+          {is_my_ad ? (
+            <View>
+              <View
+                style={{
+                  height: 50,
+                  backgroundColor: "#F6A405",
+                  alignItems: "center",
+                  padding: 10,
+                  justifyContent: "space-between",
+                  flexDirection: "row",
+                }}
+              >
+                <Text style={{ color: "white", fontSize: 17 }}>
+                  Объявелние {getStatusText(ad.idAdStatus)}
+                </Text>
+                <AntDesign name="check" color="white" size={20} />
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  width: "100%",
+                  justifyContent: "space-between",
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() =>
+                    api
+                      .sendAdToArchive(ad.idAd)
+                      .then(() => navigation.navigate("Catalog"))
+                  }
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "51%",
+                    height: 50,
+                  }}
+                >
+                  <Feather
+                    name="x"
+                    size={22}
+                    color="#F6A405"
+                    style={{ marginRight: 4 }}
+                  />
+
+                  <Text style={{ fontSize: 16, fontFamily: "LatoMedium" }}>
+                    Снять с публикации
+                  </Text>
+                </TouchableOpacity>
+                <View
+                  style={{
+                    height: 30,
+                    alignSelf: "center",
+                    width: 2,
+                    backgroundColor: "#EEEEEE",
+                  }}
+                />
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "49%",
+                    height: 50,
+                  }}
+                >
+                  <MaterialCommunityIcons
+                    name="pencil-outline"
+                    size={22}
+                    color="#F6A405"
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text style={{ fontSize: 16, fontFamily: "LatoMedium" }}>
+                    Редактировать
+                  </Text>
+                </View>
+              </View>
             </View>
           ) : null}
           <AppIntroSlider
@@ -280,7 +348,14 @@ export const Ad = ({ route, navigation }) => {
                 </Text>
               </View>
               <TouchableOpacity
-                onPress={() => Linking.openURL("tel:" + ad.phone)}
+                onPress={() => {
+                  if (authentication.is_auth) {
+                    Linking.openURL("tel:" + ad.whatsapp);
+                  } else {
+                    authentication.SetRedirect("Ad" + ad.idAd);
+                    navigation.navigate("Authentication");
+                  }
+                }}
                 style={{
                   alignItems: "center",
                   justifyContent: "center",
@@ -305,16 +380,24 @@ export const Ad = ({ route, navigation }) => {
                     width: "30%",
                     backgroundColor: "#F6A405",
                   }}
-                  onPress={() =>
-                    Linking.openURL("https://wa.me/" + ad.whatsapp)
-                  }
+                  onPress={() => {
+                    if (authentication.is_auth) {
+                      Linking.openURL("https://wa.me/" + ad.whatsapp);
+                    } else {
+                      authentication.SetRedirect("Ad" + ad.idAd);
+                      navigation.navigate("Authentication");
+                    }
+                  }}
                 >
                   <Text style={{ color: "white" }}>Написать</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
             <View style={{ flexDirection: "row", marginTop: 20 }}>
-              <TouchableOpacity style={{ flexDirection: "row" }}>
+              <TouchableOpacity
+                style={{ flexDirection: "row" }}
+                onPress={() => SetIsShowMap(true)}
+              >
                 <SvgUri width="20" height="20" source={map} />
                 <Text
                   style={{
@@ -442,129 +525,137 @@ export const Ad = ({ route, navigation }) => {
                 </View>
               ) : null}
             </View>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => SetIsVisibletMistakeFormModal(true)}
-            >
-              <Text
+            {is_simple_ad ? (
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => SetIsVisibleMistakeFormModal(true)}
+              >
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: "white",
+                    fontSize: 17,
+                  }}
+                >
+                  Нашли ошибку?
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+            {is_simple_ad ? (
+              <View
                 style={{
-                  textAlign: "center",
-                  color: "white",
-                  fontSize: 17,
+                  flex: 1,
+                  paddingBottom: 10,
+                  marginTop: 30,
                 }}
               >
-                Нашли ошибку?
-              </Text>
-            </TouchableOpacity>
-            <View
-              style={{
-                flex: 1,
-                paddingBottom: 10,
-                marginTop: 30,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 20,
-                  color: "black",
-                  marginTop: 10,
-                  fontFamily: "LatoSemibold",
-                }}
-              >
-                Похожие предложения
-              </Text>
-              <View style={{ marginTop: 5, paddingBottom: 80 }}>
-                {animals.map((two_animal) => (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-around",
-                      marginTop: 15,
-                    }}
-                  >
-                    {two_animal.map((animal) => (
-                      <TouchableOpacity
-                        style={{ width: "45%" }}
-                        onPress={() => navigation.navigate("Ad")}
-                      >
-                        <Image
-                          source={{ uri: animal.photo }}
-                          style={{
-                            width: "100%",
-                            aspectRatio: 1,
-                            borderRadius: 20,
-                          }}
-                        />
-                        <Text
-                          style={{
-                            fontFamily: "LatoRegular",
-                            fontSize: 15,
-                            marginTop: 10,
-                          }}
+                <Text
+                  style={{
+                    fontSize: 20,
+                    color: "black",
+                    marginTop: 10,
+                    fontFamily: "LatoSemibold",
+                  }}
+                >
+                  Похожие предложения
+                </Text>
+                <View style={{ marginTop: 5, paddingBottom: 80 }}>
+                  {animals.map((two_animal) => (
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-around",
+                        marginTop: 15,
+                      }}
+                    >
+                      {two_animal.map((animal) => (
+                        <TouchableOpacity
+                          style={{ width: "45%" }}
+                          onPress={() =>
+                            navigation.navigate("Ad", { id: animal.idAd })
+                          }
+                          key={animal.idAd}
                         >
-                          {animal.title}
-                        </Text>
-                        <Text
-                          style={{
-                            fontFamily: "LatoSemibold",
-                            fontSize: 15,
-                            marginTop: 5,
-                          }}
-                        >
-                          {animal.price} руб.
-                        </Text>
-                        <Text
-                          style={{
-                            color: "gray",
-                            fontFamily: "LatoRegular",
-                            marginTop: 5,
-                          }}
-                        >
-                          {animal.address}
-                        </Text>
-                        <View
-                          style={{ alignItems: "flex-start", marginTop: 7 }}
-                        >
+                          <Image
+                            source={{ uri: animal.imagePreview }}
+                            style={{
+                              width: "100%",
+                              aspectRatio: 1,
+                              borderRadius: 20,
+                            }}
+                          />
                           <Text
                             style={{
-                              fontFamily: "LatoMedium",
-                              padding: 2,
-                              paddingLeft: 6,
-                              paddingRight: 6,
-                              borderColor: "#F6A405",
-                              borderWidth: 1,
-                              borderRadius: 5,
-                              fontSize: 14,
-                              textAlign: "center",
+                              fontFamily: "LatoRegular",
+                              fontSize: 15,
+                              marginTop: 10,
                             }}
                           >
-                            {animal.from}
+                            {animal.namePet}
                           </Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                ))}
+                          <Text
+                            style={{
+                              fontFamily: "LatoSemibold",
+                              fontSize: 15,
+                              marginTop: 5,
+                            }}
+                          >
+                            {animal.price} руб.
+                          </Text>
+                          <Text
+                            style={{
+                              color: "gray",
+                              fontFamily: "LatoRegular",
+                              marginTop: 5,
+                            }}
+                          >
+                            {animal.city}
+                          </Text>
+                          <View
+                            style={{ alignItems: "flex-start", marginTop: 7 }}
+                          >
+                            <Text
+                              style={{
+                                fontFamily: "LatoMedium",
+                                padding: 2,
+                                paddingLeft: 6,
+                                paddingRight: 6,
+                                borderColor: "#F6A405",
+                                borderWidth: 1,
+                                borderRadius: 5,
+                                fontSize: 14,
+                                textAlign: "center",
+                              }}
+                            >
+                              {animal.place}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
+            ) : null}
           </View>
-          <TouchableOpacity onPress={() => SetIsCheckingAd(!is_checking_ad)}>
-            <Text>
-              Так видит
-              {!is_checking_ad
-                ? "обычный пользователь"
-                : "админ, если заявка для рассмотрения"}
-              (чтобы переключить, нажмите на текст)
-            </Text>
-          </TouchableOpacity>
         </ScrollView>
+        {is_show_map ? (
+          <MapView
+            initialRegion={{
+              latitude: ad.cityLatitude,
+              longitude: ad.cityLongitude,
+            }}
+          />
+        ) : null}
+
         <MistakeFormModal
           is_visible={is_visible_mistake_form_modal}
-          SetIsVisible={SetIsVisibletMistakeFormModal}
+          SetIsVisible={SetIsVisibleMistakeFormModal}
         />
         <RejectFormModal
           is_visible={is_visible_reject_form_modal}
-          SetIsVisible={SetIsVisibletRejectFormModal}
+          SetIsVisible={SetIsVisibleRejectFormModal}
+          id={ad.idAd}
         />
         <BottomNavigator active="catalog" navigation={navigation} />
       </>
@@ -572,8 +663,12 @@ export const Ad = ({ route, navigation }) => {
   } else return <Loader />;
 };
 
-const RejectFormModal = ({ is_visible, SetIsVisible }) => {
+const RejectFormModal = ({ is_visible, SetIsVisible, id }) => {
   const [reject_text, SetRejectText] = useState("");
+  const RejectAd = () => {
+    api.rejectAd(id, reject_text);
+    SetIsVisible(false);
+  };
   return (
     <Modal animated animationType="fade" visible={is_visible} transparent>
       <View
@@ -624,6 +719,7 @@ const RejectFormModal = ({ is_visible, SetIsVisible }) => {
               borderRadius: 10,
               textAlign: "center",
             }}
+            onPress={RejectAd}
           >
             <Text
               style={{
@@ -642,6 +738,14 @@ const RejectFormModal = ({ is_visible, SetIsVisible }) => {
 };
 
 export const MistakeFormModal = ({ is_visible, SetIsVisible }) => {
+  const [name, SetName] = useState(initialState);
+  const [phone, SetPhone] = useState(initialState);
+  const [warning_text, SetWarningText] = useState(initialState);
+
+  const PostFeedback = () => {
+    api.postFeedback(name, phone, warning_text);
+    SetIsVisible(false);
+  };
   return (
     <Modal animated animationType="fade" visible={is_visible} transparent>
       <View
@@ -675,6 +779,7 @@ export const MistakeFormModal = ({ is_visible, SetIsVisible }) => {
               paddingLeft: 10,
               marginTop: 10,
             }}
+            onChangeText={SetName}
           />
           <TextInput
             placeholder="+ 7 (000) 000-00-00"
@@ -686,6 +791,7 @@ export const MistakeFormModal = ({ is_visible, SetIsVisible }) => {
               paddingLeft: 10,
               marginTop: 10,
             }}
+            onChangeText={SetPhone}
           />
           <TextInput
             placeholder="Впишите ваш вопрос"
@@ -699,6 +805,7 @@ export const MistakeFormModal = ({ is_visible, SetIsVisible }) => {
               padding: 10,
               borderRadius: 10,
             }}
+            onChangeText={SetWarningText}
           />
 
           <TouchableOpacity
@@ -713,7 +820,7 @@ export const MistakeFormModal = ({ is_visible, SetIsVisible }) => {
               borderRadius: 10,
               textAlign: "center",
             }}
-            onPress={api.postFeedback}
+            onPress={PostFeedback}
           >
             <Text
               style={{

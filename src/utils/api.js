@@ -6,30 +6,49 @@ import { authentication } from "../store/authentication";
 const URL = "https://MALI.DEPRA.RU/api";
 const middleware = async (responce) => {
   let data = responce.status != 401 ? await responce.json() : null;
-  console.log(responce.status, 7657567);
+  console.log(responce.status, data.message);
   switch (responce.status) {
-    case 400:
-      error.SetError(data.message);
-      break;
     case 401:
       await api.refresh_token();
       return "try_again";
-    case 500:
+    case responce.status[0] == "4":
+      error.SetError(data.message);
+      break;
+    case responce.status[0] == "5":
       error.SetError("Ошибка сервера, попробуйте чуть позже");
       break;
     default:
       return data;
   }
 };
-export const getTokens = async () => {
-  let storage_tokens = await AsyncStorage.multiGet([
+export const SetAuthData = async (accessToken, refreshToken, role, email) => {
+  console.log("dgkljfdkg");
+  await AsyncStorage.multiSet([
+    ["accessToken", accessToken],
+    ["refreshToken", refreshToken],
+    ["role", String(role)],
+    ["email", email],
+  ]);
+  authentication.SetAccessToken(accessToken);
+  authentication.SetRefreshToken(refreshToken);
+  authentication.SetRole(role);
+  authentication.SetEmail(email);
+  authentication.SetIsAuth(true);
+};
+export const getAsyncData = async () => {
+  let storage_data = await AsyncStorage.multiGet([
     "accessToken",
     "refreshToken",
+    "role",
+    "email",
   ]);
-  return storage_tokens
+
+  return storage_data[0] && storage_data[0][1]
     ? {
-        accessToken: storage_tokens[0][1],
-        refreshToken: storage_tokens[1][1],
+        accessToken: storage_data[0][1],
+        refreshToken: storage_data[1][1],
+        role: storage_data[2][1],
+        email: storage_data[3][1],
       }
     : null;
 };
@@ -38,12 +57,11 @@ export const getEmail = async () => {
 };
 const request = {
   post: async (url, body) => {
-    let tokens = await getTokens();
     let responce = await fetch(URL + url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: tokens ? `Bearer ${tokens.accessToken}` : ``,
+        Authorization: `Bearer ${authentication.accessToken}`,
       },
       body: JSON.stringify(body),
     });
@@ -53,12 +71,11 @@ const request = {
     } else return data;
   },
   post_form_data: async (url, body) => {
-    let tokens = await getTokens();
     let responce = await fetch(URL + url, {
       method: "POST",
       headers: {
         "Content-Type": " multipart/form-data",
-        Authorization: tokens ? `Bearer ${tokens.accessToken}` : ``,
+        Authorization: `Bearer ${authentication.accessToken}`,
       },
       body: body,
     });
@@ -68,10 +85,9 @@ const request = {
     } else return data;
   },
   get: async (url) => {
-    let tokens = await getTokens();
     let responce = await fetch(URL + url, {
       method: "GET",
-      headers: tokens ? { Authorization: `Bearer ${tokens.accessToken}` } : {},
+      headers: { Authorization: `Bearer ${authentication.accessToken}` },
     });
     let data = await middleware(responce);
     if (data == "try_again") {
@@ -93,14 +109,8 @@ export const api = {
       email,
       password,
     });
-    console.log(data);
     if (data) {
-      await AsyncStorage.multiSet([
-        ["accessToken", data.accessToken],
-        ["refreshToken", data.refreshToken],
-        ["role", String(data.role)],
-        ["email", email],
-      ]);
+      await SetAuthData(data.accessToken, data.refreshToken, data.role, email);
     }
     return data;
   },
@@ -110,12 +120,7 @@ export const api = {
       verificationCode,
     });
     if (data) {
-      await AsyncStorage.multiSet([
-        ["accessToken", data.accessToken],
-        ["refreshToken", data.refreshToken],
-        ["role", String(data.role)],
-        ["email", email],
-      ]);
+      await SetAuthData(data.accessToken, data.refreshToken, data.role, email);
     }
     return data;
   },
@@ -134,23 +139,14 @@ export const api = {
     return data;
   },
   refresh_token: async () => {
-    let email = authentication.email || (await getEmail());
-    let refreshToken = (await getTokens()).refreshToken;
+    let email = authentication.email;
+    let refreshToken = authentication.refreshToken;
     let data = await request.post("/authentication/refresh_token", {
       email,
       refreshToken,
     });
-    console.log("REFRESH", data);
     if (data) {
-      await AsyncStorage.multiSet([
-        ["accessToken", data.accessToken],
-        ["refreshToken", data.refreshToken],
-        ["role", String(data.role)],
-        ["email", email],
-      ]);
-      authentication.SetRole(data.role);
-      authentication.SetEmail(email);
-      authentication.SetIsAuth(true);
+      await SetAuthData(data.accessToken, data.refreshToken, data.role, email);
     }
 
     return data;
@@ -167,11 +163,22 @@ export const api = {
     let data = await request.get("/ads/towns");
     return data;
   },
-  getAds: async (idAnimalCategories, idAnimalBreed) => {
-    let data = await request.get(
-      `/ads/cards?idAnimalBreed=${idAnimalBreed}&idAnimalCategories=${idAnimalCategories}`
-    );
-    console.log(data.cards);
+  getAds: async (
+    idAnimalCategories,
+    idAnimalBreed,
+    from,
+    idCity,
+    price_min,
+    price_max
+  ) => {
+    let data;
+    // if (idAnimalCategories) {
+    //   data = await request.get(
+    //     `/ads/cards?idAnimalBreed=${idAnimalBreed}&idAnimalCategories=${idAnimalCategories}&idCity=${idCity}&priceMin=${price_min}&priceMax=${price_max}`
+    //   );
+    // } else {
+    data = await request.get(`/ads/cards`);
+    // }
     return data.cards;
   },
   getBreeds: async (idAnimalCategories) => {
@@ -184,8 +191,9 @@ export const api = {
     let data = await request.get("/ads/card?idAd=" + id);
     return data;
   },
-  postFeedback: async (phoneNumber, message) => {
+  postFeedback: async (name, phoneNumber, message) => {
     let data = await request.post("/user/feedback", {
+      name,
       phoneNumber,
       message,
     });
@@ -206,7 +214,11 @@ export const api = {
   createAd: async (body) => {
     let form_data = new FormData();
     Object.keys(body).forEach((key) => {
-      form_data.append(key, form_data[key]);
+      if (key == "imgs") {
+        body.imgs.forEach((el) => {
+          form_data.append("imgs[]", el);
+        });
+      } else form_data.append(key, form_data[key]);
     });
     let data = await request.post_form_data("/user/create_ad", form_data);
     return data;
@@ -217,7 +229,6 @@ export const api = {
   },
   approveAd: async (idAd) => {
     let data = await request.post("/admin/approve_ad", { idAd });
-
     return data;
   },
   rejectAd: async (idAd, reasonReject) => {

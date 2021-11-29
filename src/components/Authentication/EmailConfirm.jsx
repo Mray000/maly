@@ -16,7 +16,13 @@ export const EmailConfirm = ({ navigation }) => {
   const [confirm_code, SetConfirmCode] = useState("");
   const ConfirmEmail = () => {
     let is_ok = await authentication.confirm_email(confirm_code);
-    if (is_ok) navigation.navigate("Catalog");
+    if (is_ok) {
+      if (authentication.redirect.substr(0, 2) == "Ad") {
+        navigation.navigate("Ad", {
+          id: Number(authentication.redirect.substr(2)),
+        });
+      } else navigation.navigate(authentication.redirect);
+    }
   };
   return (
     <View style={styles.container}>

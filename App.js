@@ -24,47 +24,73 @@ import * as Linking from "expo-linking";
 import { Ad } from "./src/components/Ad/Ad";
 import { Profile } from "./src/components/PersonalArea/Profile";
 import { ErrorModal } from "./src/utils/ErrorModal";
-import { getTokens } from "./src/utils/api";
+import { getAsyncData, SetAuthData } from "./src/utils/api";
+import { authentication } from "./src/store/authentication";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Stack = createStackNavigator();
 const prefix = Linking.makeUrl("/");
 
-function App({ navigation }) {
-  const [data, SetData] = useState(null);
+function App() {
+  const [ad_id, SetAdId] = useState(0);
   const [tokens, SetTokens] = useState(null);
+  const [is_data_load, SetIsDataLoad] = useState(false);
+  const [is_link_load, SetIsLinkLoad] = useState(false);
   function handleDeepLink(event) {
-    let data = Linking.parse(event.url);
-    SetData(data);
+    let id = Linking.parse(event.url)?.path;
+    if (id) SetAdId(id);
+
+    SetIsLinkLoad(true);
   }
+  const LinkToAd = ({ navigation }) => {
+    navigation.navigate("Ad", { id: ad_id });
+    return null;
+  };
   useEffect(() => {
     async function GetInitialUrl() {
       const initialURL = await Linking.getInitialURL();
-      if (initialURL) SetData(Linking.parse(initialURL));
+      let token = Linking.parse(initialURL).path;
+      if (initialURL) SetAdId(token);
+      SetIsLinkLoad(true);
     }
     Linking.addEventListener("url", handleDeepLink);
-    if (!data) GetInitialUrl();
+    if (!ad_id) GetInitialUrl();
     return () => {
       Linking.removeEventListener("url");
     };
   }, []);
   useEffect(() => {
-    getTokens().then(SetTokens);
-    // getTokens().then(console.log);
+    (async () => {
+      // let a = await AsyncStorage.multiRemove([
+      //   "accessToken",
+      //   "refreshToken",
+      //   "role",
+      //   "email",
+
+      // ]);
+      await AsyncStorage.clear();
+      let data = await getAsyncData();
+
+      if (data) {
+        await SetAuthData(
+          data.accessToken,
+          data.refreshToken,
+          data.role,
+          data.email
+        );
+      }
+      SetIsDataLoad(true);
+    })();
   }, []);
   const linking = {
     prefixes: [prefix],
-    config: {
-      screens: {
-        Link: "link",
-      },
-    },
   };
   let [fontsLoaded] = useFonts({
     LatoMedium: Lato_Medium_Requier,
     LatoSemibold: Lato_Semibold_Require,
     LatoRegular: Lato_Regular_Require,
   });
-  if (!fontsLoaded || !tokens) return null;
+  if (!fontsLoaded || !is_data_load || !is_link_load) return null;
   return (
     <SafeAreaView
       style={{
@@ -72,14 +98,16 @@ function App({ navigation }) {
         paddingTop: StatusBar.currentHeight,
       }}
     >
+      {console.log(ad_id, "7657567")}
       <NavigationContainer linking={linking}>
         <Stack.Navigator
           screenOptions={{
             headerShown: false,
             cardStyle: { backgroundColor: "white" },
           }}
-          initialRouteName={tokens ? "Catalog" : "Start"}
-          // initialRouteName={"Authentication"}
+          initialRouteName={
+            ad_id ? "LinkToAd" : authentication.is_auth ? "Catalog" : "Start"
+          }
         >
           <Stack.Screen name="Catalog" component={Catalog} />
           <Stack.Screen name="CatalogList" component={CatalogList} />
@@ -104,6 +132,7 @@ function App({ navigation }) {
           <Stack.Screen name="MyAds" component={MyAds} />
           <Stack.Screen name="CatalogStreak" component={CatalogStreak} />
           <Stack.Screen name="ForgetPassword" component={ForgetPassword} />
+          <Stack.Screen name="LinkToAd" component={LinkToAd} />
         </Stack.Navigator>
         <ErrorModal />
       </NavigationContainer>

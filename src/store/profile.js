@@ -46,21 +46,7 @@ class Profile {
       numberPhone: !numberPhoneInvalid(this.phone) ? this.phone : "",
       numberWhatsApp: !numberPhoneInvalid(this.whatsapp) ? this.whatsapp : "",
     };
-    if (uri) {
-      let file_name = uri
-        .split("")
-        .reverse()
-        .join("")
-        .split("/")[0]
-        .split("")
-        .reverse()
-        .join("");
-      body["icon"] = {
-        name: file_name,
-        uri: uri, //  file:///data/user/0/com.cookingrn/cache/rn_image_picker_lib_temp_5f6898ee-a8d4-48c9-b265-142efb11ec3f.jpg
-        type: "image/" + file_name.split(".")[1], // video/mp4 for videos..or image/png etc...
-      };
-    }
+    if (uri) body["icon"] = ConvertImage(uri);
     this.avatar = uri;
     api.changeUserData(body);
   };
