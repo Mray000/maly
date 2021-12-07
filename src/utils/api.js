@@ -4,22 +4,22 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { error } from "../store/error";
 import { authentication } from "../store/authentication";
 const URL = "https://MALI.DEPRA.RU/api";
-const middleware = async (responce) => {
-  let data = responce.status != 401 ? await responce.json() : null;
-  console.log(responce.status, data.message);
-  switch (responce.status) {
-    case 401:
-      await api.refresh_token();
-      return "try_again";
-    case responce.status[0] == "4":
-      error.SetError(data.message);
-      break;
-    case responce.status[0] == "5":
-      error.SetError("Ошибка сервера, попробуйте чуть позже");
-      break;
-    default:
-      return data;
+
+const getJson = async (responce) => {
+  try {
+    return await responce.json();
+  } catch (e) {
+    return null;
   }
+};
+const middleware = async (responce) => {
+  let status = String(responce.status);
+  let data = await getJson(responce);
+  console.log(status, data?.message);
+  if (status == "401") return "try_again";
+  if (status[0] == "4") error.SetError(data?.message);
+  if (status[0] == "5") error.SetError("Ошибка сервера, попробуйте чуть позже");
+  if (status[0] == "2") return data;
 };
 export const SetAuthData = async (accessToken, refreshToken, role, email) => {
   console.log("dgkljfdkg");
@@ -71,6 +71,7 @@ const request = {
     } else return data;
   },
   post_form_data: async (url, body) => {
+    console.log(url, URL);
     let responce = await fetch(URL + url, {
       method: "POST",
       headers: {
@@ -84,6 +85,7 @@ const request = {
       return request.post_form_data(url, body);
     } else return data;
   },
+
   get: async (url) => {
     let responce = await fetch(URL + url, {
       method: "GET",
@@ -156,8 +158,8 @@ export const api = {
     return data;
   },
   getMyAds: async () => {
-    let data = await request.get("user/user_ads/");
-    return data;
+    let data = await request.get("/user/user_ads");
+    return data.ads;
   },
   getCities: async () => {
     let data = await request.get("/ads/towns");
@@ -169,16 +171,27 @@ export const api = {
     from,
     idCity,
     price_min,
-    price_max
+    price_max,
+    limit
   ) => {
     let data;
-    // if (idAnimalCategories) {
-    //   data = await request.get(
-    //     `/ads/cards?idAnimalBreed=${idAnimalBreed}&idAnimalCategories=${idAnimalCategories}&idCity=${idCity}&priceMin=${price_min}&priceMax=${price_max}`
-    //   );
-    // } else {
-    data = await request.get(`/ads/cards`);
-    // }
+    if (idAnimalCategories) {
+      data = await request.get(
+        `/ads/cards?idAnimalBreed=${idAnimalBreed}&idAnimalCategories=${idAnimalCategories}${
+          idCity ? `&idCity=${idCity}` : ``
+        }&priceMin=${price_min}&priceMax=${price_max}&idAnimalPlace=${JSON.stringify(
+          from
+        )}`
+      );
+      console.log(
+        `/ads/cards?idAnimalBreed=${idAnimalBreed}&idAnimalCategories=${idAnimalCategories}&idCity=${idCity}&priceMin=${price_min}&priceMax=${price_max}&idAnimalPlace=${JSON.stringify(
+          from
+        )}`
+      );
+    } else
+      data = await request.get(
+        `/ads/cards${limit ? `?&numberAds=${limit}` : ``}`
+      );
     return data.cards;
   },
   getBreeds: async (idAnimalCategories) => {
@@ -234,5 +247,10 @@ export const api = {
   rejectAd: async (idAd, reasonReject) => {
     let data = await request.post("/admin/reject_ad", { idAd, reasonReject });
     return data;
+  },
+  getAdsForCheck: async () => {
+    let data = await request.get("/admin/ads_need_approved?limit=5");
+    console.log(data);
+    return data.cards;
   },
 };

@@ -5,6 +5,7 @@ class Ad {
   category_id = 0;
   breed_id = 0;
   from = [];
+
   constructor() {
     makeAutoObservable(this);
   }
@@ -24,10 +25,7 @@ class Ad {
     price,
     sex,
     age,
-    city,
-    name,
-    phone,
-    whatsapp
+    city
   ) => {
     let new_ad = {
       preview: ConvertImage(photos[0]),

@@ -17,17 +17,7 @@ import profile_i from "../assets/profile.svg";
 import profile_active from "../assets/profile_active.svg";
 export const BottomNavigator = ({ active, navigation }) => {
   let bottom_navigator = useRef();
-  useEffect(() => {
-    bottom_navigator.current.measure((fx, fy, width, height, px, py) => {
-      console.log("Component width is: " + width);
-      console.log("Component height is: " + height);
-      console.log("X offset to frame: " + fx);
-      console.log("Y offset to frame: " + fy);
-      console.log("X offset to page: " + px);
-      console.log("Y offset to page: " + py);
-      // bottom_navigator.current.style.windowHei
-    });
-  }, []);
+
   let catalog = active == "catalog";
   let new_ad = active == "new_ad";
   let profile = active == "profile";

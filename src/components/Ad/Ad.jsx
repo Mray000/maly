@@ -29,10 +29,11 @@ import { api } from "../../utils/api";
 import { Loader } from "../../utils/Loader";
 import { authentication } from "../../store/authentication";
 import MapView from "react-native-maps";
+import { AdsList } from "../../utils/AdsList";
 
 export const Ad = ({
   route: {
-    params: { id: id },
+    params: { id: id, for_check: for_check },
   },
   navigation,
 }) => {
@@ -40,18 +41,16 @@ export const Ad = ({
     useState(false);
   const [is_visible_reject_form_modal, SetIsVisibleRejectFormModal] =
     useState(false);
+  const [ad_from_server, SetAdFromServer] = useState(null);
+  const [ads_for_check, SetAdsForCheck] = useState(null);
+  const [photo_index, SetPhotoIndex] = useState(0);
   const [ads, SetAds] = useState([]);
   const [is_show_map, SetIsShowMap] = useState(false);
-  let is_my_ad = false;
-  let is_checking_ad = false;
+  let is_checking_ad = for_check;
+  let is_my_ad = ad_from_server?.isMine;
   let is_simple_ad = !is_my_ad && !is_checking_ad;
+  let ad = null;
 
-  let animals = [];
-  for (let i = 0; i < ads.length; i += 2) {
-    animals.push([ads[i], ads[i + 1]]);
-  }
-  const [ad, SetAd] = useState(null);
-  const [photo_index, SetPhotoIndex] = useState(0);
   const getStatusText = (statusId) => {
     switch (statusId) {
       case 1:
@@ -62,13 +61,39 @@ export const Ad = ({
         return "в архиве";
     }
   };
-  let dots = Array.from(Array(ad?.imagesPath?.length).keys());
+  const SendToArchive = async () => {
+    await api.sendAdToArchive(ad.idAd);
+    navigation.navigate("CatalogList");
+  };
+  console.log(is_checking_ad);
   useEffect(() => {
-    api.getAd(id).then(SetAd);
-    api.getAds({ numberAds: 6 }).then(SetAds);
+    if (is_checking_ad) api.getAdsForCheck().then(SetAdsForCheck);
+    else api.getAd(id).then(SetAdFromServer);
   }, []);
 
-  if (ad && ads.length) {
+  useEffect(() => {
+    if (ad_from_server && is_simple_ad) {
+      api.getAds(null, null, null, null, null, null, 6).then(SetAds);
+    }
+  }, [ad_from_server]);
+
+  useEffect(() => {
+    if (is_checking_ad && !ads_for_check) api.getAdsForCheck(SetAdsForCheck);
+  }, [ads_for_check]);
+
+  if ((ad_from_server && ads) || ads_for_check) {
+    if (is_checking_ad && !ads_for_check.length)
+      return (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text>Все объявлений проверены</Text>
+        </View>
+      );
+
+    if (is_checking_ad) ad = ads_for_check[0];
+    else ad = ad_from_server;
+    let dots = Array.from(Array(ad?.imagesPath?.length).keys());
     return (
       <>
         <ScrollView>
@@ -190,7 +215,10 @@ export const Ad = ({
                     style={{ marginRight: 4 }}
                   />
 
-                  <Text style={{ fontSize: 16, fontFamily: "LatoMedium" }}>
+                  <Text
+                    style={{ fontSize: 16, fontFamily: "LatoMedium" }}
+                    onPress={SendToArchive}
+                  >
                     Снять с публикации
                   </Text>
                 </TouchableOpacity>
@@ -559,82 +587,7 @@ export const Ad = ({
                 >
                   Похожие предложения
                 </Text>
-                <View style={{ marginTop: 5, paddingBottom: 80 }}>
-                  {animals.map((two_animal) => (
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-around",
-                        marginTop: 15,
-                      }}
-                    >
-                      {two_animal.map((animal) => (
-                        <TouchableOpacity
-                          style={{ width: "45%" }}
-                          onPress={() =>
-                            navigation.navigate("Ad", { id: animal.idAd })
-                          }
-                          key={animal.idAd}
-                        >
-                          <Image
-                            source={{ uri: animal.imagePreview }}
-                            style={{
-                              width: "100%",
-                              aspectRatio: 1,
-                              borderRadius: 20,
-                            }}
-                          />
-                          <Text
-                            style={{
-                              fontFamily: "LatoRegular",
-                              fontSize: 15,
-                              marginTop: 10,
-                            }}
-                          >
-                            {animal.namePet}
-                          </Text>
-                          <Text
-                            style={{
-                              fontFamily: "LatoSemibold",
-                              fontSize: 15,
-                              marginTop: 5,
-                            }}
-                          >
-                            {animal.price} руб.
-                          </Text>
-                          <Text
-                            style={{
-                              color: "gray",
-                              fontFamily: "LatoRegular",
-                              marginTop: 5,
-                            }}
-                          >
-                            {animal.city}
-                          </Text>
-                          <View
-                            style={{ alignItems: "flex-start", marginTop: 7 }}
-                          >
-                            <Text
-                              style={{
-                                fontFamily: "LatoMedium",
-                                padding: 2,
-                                paddingLeft: 6,
-                                paddingRight: 6,
-                                borderColor: "#F6A405",
-                                borderWidth: 1,
-                                borderRadius: 5,
-                                fontSize: 14,
-                                textAlign: "center",
-                              }}
-                            >
-                              {animal.place}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  ))}
-                </View>
+                <AdsList ads={ads} navigation={navigation} />
               </View>
             ) : null}
           </View>
@@ -655,6 +608,7 @@ export const Ad = ({
         <RejectFormModal
           is_visible={is_visible_reject_form_modal}
           SetIsVisible={SetIsVisibleRejectFormModal}
+          SetAdsForCheck={SetAdsForCheck}
           id={ad.idAd}
         />
         <BottomNavigator active="catalog" navigation={navigation} />
@@ -663,10 +617,14 @@ export const Ad = ({
   } else return <Loader />;
 };
 
-const RejectFormModal = ({ is_visible, SetIsVisible, id }) => {
+const RejectFormModal = ({ is_visible, SetIsVisible, SetAdsForCheck, id }) => {
   const [reject_text, SetRejectText] = useState("");
-  const RejectAd = () => {
-    api.rejectAd(id, reject_text);
+  const RejectAd = async () => {
+    await api.rejectAd(id, reject_text);
+    SetAdsForCheck((prev_ads) => {
+      let ads_for_check = prev_ads.filter((ad) => ad.idAd != id);
+      return ads_for_check.length ? ads_for_check : null;
+    });
     SetIsVisible(false);
   };
   return (
@@ -738,9 +696,9 @@ const RejectFormModal = ({ is_visible, SetIsVisible, id }) => {
 };
 
 export const MistakeFormModal = ({ is_visible, SetIsVisible }) => {
-  const [name, SetName] = useState(initialState);
-  const [phone, SetPhone] = useState(initialState);
-  const [warning_text, SetWarningText] = useState(initialState);
+  const [name, SetName] = useState("");
+  const [phone, SetPhone] = useState("");
+  const [warning_text, SetWarningText] = useState("");
 
   const PostFeedback = () => {
     api.postFeedback(name, phone, warning_text);

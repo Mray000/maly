@@ -27,53 +27,12 @@ const slides = [
   },
 ];
 
-const renderItem = ({ item, index, onDone }) => {
-  let is_first_slide = index == 0;
+const renderItem = ({ item }) => {
   return (
     <View style={styles.slide}>
       <Image style={styles.image} source={item.image} />
       <View style={styles.content}>
         <Text style={{ color: "white", fontSize: 18 }}>{item.text}</Text>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 40,
-          }}
-        >
-          <View style={{ flexDirection: "row" }}>
-            <View
-              style={{
-                backgroundColor: "white",
-                width: is_first_slide ? 20 : 5,
-                height: 5,
-                borderRadius: 10,
-                opacity: is_first_slide ? 1 : 0.5,
-              }}
-            />
-            <View
-              style={{
-                backgroundColor: "white",
-                opacity: !is_first_slide ? 1 : 0.5,
-                width: !is_first_slide ? 20 : 5,
-                height: 5,
-                borderRadius: 10,
-                marginLeft: 10,
-              }}
-            />
-          </View>
-          <TouchableOpacity onPress={onDone}>
-            <Text
-              style={{
-                color: "white",
-                fontSize: 18,
-              }}
-            >
-              {index == 0 ? " Пропустить" : "Начать"}
-            </Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </View>
   );
@@ -89,16 +48,63 @@ export const Start = ({ navigation }) => {
     StatusBar.setBackgroundColor("#F6A400");
     return () => {};
   }, []);
-
+  const [is_first_slide, SetIsFirstSlide] = useState(true);
   return (
-    <AppIntroSlider
-      renderItem={(props) => renderItem({ onDone, ...props })}
-      data={slides}
-      showDoneButton={false}
-      showNextButton={false}
-      activeDotStyle={{ display: "none" }}
-      dotStyle={{ display: "none" }}
-    />
+    <View style={{ flex: 1 }}>
+      <AppIntroSlider
+        renderItem={renderItem}
+        data={slides}
+        showDoneButton={false}
+        showNextButton={false}
+        onSlideChange={(index) => SetIsFirstSlide(index == 0)}
+        activeDotStyle={{ display: "none" }}
+        dotStyle={{ display: "none" }}
+      />
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          bottom: 40,
+          alignSelf: "center",
+
+          width: "70%",
+          position: "absolute",
+        }}
+      >
+        <View style={{ flexDirection: "row" }}>
+          <View
+            style={{
+              backgroundColor: "white",
+              width: is_first_slide ? 20 : 5,
+              height: 5,
+              borderRadius: 10,
+              opacity: is_first_slide ? 1 : 0.5,
+            }}
+          />
+          <View
+            style={{
+              backgroundColor: "white",
+              opacity: !is_first_slide ? 1 : 0.5,
+              width: !is_first_slide ? 20 : 5,
+              height: 5,
+              borderRadius: 10,
+              marginLeft: 10,
+            }}
+          />
+        </View>
+        <TouchableOpacity onPress={onDone}>
+          <Text
+            style={{
+              color: "white",
+              fontSize: 18,
+            }}
+          >
+            {is_first_slide ? "Пропустить" : "Начать"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 

@@ -19,7 +19,6 @@ import Lato_Medium_Requier from "./src/assets/fonts/Lato-Medium.ttf";
 import Lato_Semibold_Require from "./src/assets/fonts/Lato-Semibold.ttf";
 import Lato_Regular_Require from "./src/assets/fonts/Lato-Regular.ttf";
 import { CatalogFilter } from "./src/components/Catalog/CatalogFilter";
-import { MyAd } from "./src/components/Ad/MyAd";
 import * as Linking from "expo-linking";
 import { Ad } from "./src/components/Ad/Ad";
 import { Profile } from "./src/components/PersonalArea/Profile";
@@ -33,7 +32,6 @@ const prefix = Linking.makeUrl("/");
 
 function App() {
   const [ad_id, SetAdId] = useState(0);
-  const [tokens, SetTokens] = useState(null);
   const [is_data_load, SetIsDataLoad] = useState(false);
   const [is_link_load, SetIsLinkLoad] = useState(false);
   function handleDeepLink(event) {
@@ -47,10 +45,13 @@ function App() {
     return null;
   };
   useEffect(() => {
+    console.log(324);
     async function GetInitialUrl() {
       const initialURL = await Linking.getInitialURL();
-      let token = Linking.parse(initialURL).path;
-      if (initialURL) SetAdId(token);
+      if (initialURL) {
+        let id = Linking.parse(initialURL).path;
+        SetAdId(id);
+      }
       SetIsLinkLoad(true);
     }
     Linking.addEventListener("url", handleDeepLink);
@@ -59,6 +60,7 @@ function App() {
       Linking.removeEventListener("url");
     };
   }, []);
+
   useEffect(() => {
     (async () => {
       // let a = await AsyncStorage.multiRemove([
@@ -68,9 +70,10 @@ function App() {
       //   "email",
 
       // ]);
-      await AsyncStorage.clear();
-      let data = await getAsyncData();
 
+      // await AsyncStorage.clear();
+      let data = await getAsyncData();
+      console.log(data.accessToken);
       if (data) {
         await SetAuthData(
           data.accessToken,
@@ -98,7 +101,6 @@ function App() {
         paddingTop: StatusBar.currentHeight,
       }}
     >
-      {console.log(ad_id, "7657567")}
       <NavigationContainer linking={linking}>
         <Stack.Navigator
           screenOptions={{
@@ -120,7 +122,6 @@ function App() {
           />
           <Stack.Screen name="Authentication" component={Authentication} />
           <Stack.Screen name="NewAd" component={NewAd} />
-          <Stack.Screen name="MyAd" component={MyAd} />
           <Stack.Screen name="Ad" component={Ad} />
           <Stack.Screen
             name="PoliticConfidentiality"

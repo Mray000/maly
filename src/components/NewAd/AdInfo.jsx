@@ -21,9 +21,10 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { api } from "../../utils/api";
 import { Feather, Entypo } from "@expo/vector-icons";
 import { ad } from "../../store/ad";
+import { profile } from "../../store/profile";
+import { observer } from "mobx-react-lite";
 
-export const AdInfo = ({ navigation, route }) => {
-  let avatar = null;
+export const AdInfo = observer(({ navigation, route }) => {
   const [current_index, SetCurrentIndex] = useState(0);
   const [is_visible_city_modal, SetIsVisibleCityModal] = useState(false);
   const [from, SetFrom] = useState("Приют");
@@ -34,7 +35,7 @@ export const AdInfo = ({ navigation, route }) => {
   const [price, SetPrice] = useState(0);
   const [age, SetAge] = useState(0);
   const [sex, SetSex] = useState(null);
-  const [city, SetCity] = useState("");
+  const [city, SetCity] = useState({ id: 0, name: "" });
   const [name, SetName] = useState("");
   const [phone, SetPhone] = useState("");
   const [whatsapp, SetWhatsapp] = useState("");
@@ -50,7 +51,11 @@ export const AdInfo = ({ navigation, route }) => {
     "Укажите адрес",
     "Как с вами связаться",
   ];
-
+  useEffect(() => {
+    SetName(profile.name);
+    SetName(profile.phone);
+    SetName(profile.whatsapp);
+  }, [profile.name, profile.phone, profile.whatsapp]);
   let keyBoradHeight = useKeyboard();
   const CheckYoutubeLink = () => {
     if (youtube) {
@@ -68,11 +73,13 @@ export const AdInfo = ({ navigation, route }) => {
   }, [youtube]);
   useEffect(() => {
     api.getCities().then(SetCities);
+    profile.setProfile();
   }, []);
 
   const Continue = async () => {
     if (!is_last) SetCurrentIndex(current_index + 1);
     else {
+      await profile.changeUserData();
       let ad_id = await ad.createAd(
         title,
         description,
@@ -82,10 +89,7 @@ export const AdInfo = ({ navigation, route }) => {
         price,
         sex,
         age,
-        city,
-        name,
-        phone,
-        whatsapp
+        city.id
       );
 
       navigation.navigate("Ad", { id: ad_id });
@@ -359,7 +363,7 @@ export const AdInfo = ({ navigation, route }) => {
         }}
       >
         <Text style={{ fontSize: 16, color: "gray" }}>
-          {city || "Область, город, населеный пункт"}
+          {city.name || "Область, город, населеный пункт"}
         </Text>
       </TouchableOpacity>
       <CitiesModal
@@ -385,7 +389,7 @@ export const AdInfo = ({ navigation, route }) => {
           value={name}
         />
         <Image
-          source={avatar || no_avatar}
+          source={profile.avatar || no_avatar}
           style={{
             width: 35,
             height: 35,
@@ -496,7 +500,7 @@ export const AdInfo = ({ navigation, route }) => {
       ) : null}
     </KeyboardAwareScrollView>
   );
-};
+});
 
 const styles = StyleSheet.create({
   header: {

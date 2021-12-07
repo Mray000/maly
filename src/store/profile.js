@@ -15,8 +15,7 @@ class Profile {
   constructor() {
     makeAutoObservable(this);
   }
-
-  async getProfile() {
+  async setProfile() {
     let { nameUser, surname, email, numberPhone, whatsappPhone, iconPath } =
       await api.getProfile();
     runInAction(() => {
@@ -29,6 +28,7 @@ class Profile {
       this.is_profile_load = true;
     });
   }
+
   changePhone = (value) => {
     this.phone = value;
   };
@@ -38,6 +38,22 @@ class Profile {
   changeWhatsapp = (value) => {
     this.whatsapp = value;
   };
+  changeProfileFromAd = async (name, phone, whatsapp) => {
+    if (name != this.name || phone != this.phone || whatsapp != this.whatsapp) {
+      let body = {
+        name,
+        surname,
+        numberPhone: phone,
+        numberWhatsApp: whatsapp,
+      };
+      await api.changeUserData(body);
+      runInAction(() => {
+        this.name = name;
+        this.surname = phone;
+        this.whatsapp = whatsapp;
+      });
+    }
+  };
 
   changeUserData = async (e, uri) => {
     let body = {
@@ -46,8 +62,10 @@ class Profile {
       numberPhone: !numberPhoneInvalid(this.phone) ? this.phone : "",
       numberWhatsApp: !numberPhoneInvalid(this.whatsapp) ? this.whatsapp : "",
     };
-    if (uri) body["icon"] = ConvertImage(uri);
-    this.avatar = uri;
+    if (uri) {
+      body["icon"] = ConvertImage(uri);
+      this.avatar = uri;
+    }
     api.changeUserData(body);
   };
 }

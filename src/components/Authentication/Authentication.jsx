@@ -4,6 +4,7 @@ import {
   Image,
   KeyboardAvoidingView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -19,7 +20,6 @@ import { Dimensions } from "react-native";
 import { authentication } from "../../store/authentication.js";
 import { observer } from "mobx-react-lite";
 export const Authentication = observer(({ navigation }) => {
-  console.log("AUTHLFLKG");
   const [email, SetEmail] = useState("");
   const [password, SetPassword] = useState("");
   const [repeat_password, SetRepeatPassword] = useState("");
@@ -53,7 +53,13 @@ export const Authentication = observer(({ navigation }) => {
   );
   return (
     <KeyboardAwareScrollView style={{ flex: 1, backgroundColor: "#7B7B7B" }}>
-      <View style={{ height: height, justifyContent: "flex-end" }}>
+      <View
+        style={{
+          height,
+          justifyContent: "flex-end",
+          // paddingTop: 40,
+        }}
+      >
         <View style={styles.main}>
           <View
             style={{ height: height * 0.25, justifyContent: "space-between" }}

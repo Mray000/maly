@@ -14,7 +14,9 @@ import {
 import { SafeAreaView, StatusBar, PlatformOSType } from "react-native";
 import { BottomNavigator } from "../../utils/BottomNavigator.jsx";
 import { authentication } from "../../store/authentication";
-export const PersonalArea = ({ navigation }) => {
+import { observer } from "mobx-react-lite";
+export const PersonalArea = observer(({ navigation }) => {
+  console.log(authentication.is_auth);
   if (!authentication.is_auth) {
     authentication.SetRedirect("PersonalArea");
     navigation.navigate("Authentication");
@@ -70,7 +72,7 @@ export const PersonalArea = ({ navigation }) => {
               <View style={{ height: 1, backgroundColor: "#E7E7E7" }} />
               <TouchableOpacity
                 style={styles.link}
-                onPress={() => navigation.navigate("CheckAds")}
+                onPress={() => navigation.navigate("Ad", { for_check: true })}
               >
                 <Text style={{ fontSize: 18 }}>Проверка объявелний</Text>
                 <SvgUri source={right} width="20" height="20" />
@@ -93,7 +95,7 @@ export const PersonalArea = ({ navigation }) => {
       <BottomNavigator navigation={navigation} active="profile" />
     </>
   );
-};
+});
 
 const styles = StyleSheet.create({
   header: {

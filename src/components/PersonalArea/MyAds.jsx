@@ -1,6 +1,6 @@
 import left from "../../assets/left.svg";
 import SvgUri from "react-native-svg-uri";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   Platform,
@@ -9,6 +9,7 @@ import {
   View,
   Button,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { api } from "../../utils/api";
 import { Loader } from "../../utils/Loader";
@@ -29,40 +30,57 @@ export const MyAds = ({ navigation }) => {
   ];
   const [active_ads, SetActiveAds] = useState(null);
   const [checking_ads, SetCheckingAds] = useState(null);
+  const [reject_ads, SetRejectAds] = useState(null);
   const [archived_ads, SetArchivedAds] = useState(null);
   const [ads_type, SetAdsType] = useState("active");
   let ads_to_show = null;
   switch (ads_type) {
     case "active":
       ads_to_show = active_ads;
+      break;
     case "on_check":
       ads_to_show = checking_ads;
+      break;
+    case "reject":
+      ads_to_show = reject_ads;
+      break;
     case "archive":
       ads_to_show = archived_ads;
+      break;
   }
   useEffect(() => {
-    api.getAds().then((data) => {
+    api.getMyAds().then((data) => {
       let active_ads = [];
       let checking_ads = [];
+      let reject_ads = [];
       let archived_ads = [];
       data.forEach((ad) => {
+        console.log(typeof ad.idAdStatus);
         switch (ad.idAdStatus) {
           case 1:
+            console.log("FFFFFFFFFFf");
             active_ads.push(ad);
+            break;
           case 2:
             checking_ads.push(ad);
+            break;
+          case 10:
+            reject_ads.push(ad);
+            break;
           case 3:
             archived_ads.push(ad);
+            break;
         }
-        SetActiveAds(active_ads);
-        SetCheckingAds(checking_ads);
-        SetActiveAds(active_ads);
       });
+      SetActiveAds(active_ads);
+      SetCheckingAds(checking_ads);
+      SetRejectAds(reject_ads);
+      SetArchivedAds(archived_ads);
     });
   }, []);
   if (!ads_to_show) return <Loader />;
   return (
-    <View
+    <ScrollView
       style={{
         backgroundColor: "white",
         flex: 1,
@@ -78,7 +96,7 @@ export const MyAds = ({ navigation }) => {
             justifyContent: "center",
             position: "absolute",
           }}
-          onPress={() => navigation.push("PersonalArea")}
+          onPress={() => navigation.navigate("PersonalArea")}
         >
           <SvgUri source={left} />
         </TouchableOpacity>
@@ -94,12 +112,16 @@ export const MyAds = ({ navigation }) => {
           Мои объявления
         </Text>
       </View>
-      <View
+      <ScrollView
         style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
           marginTop: 10,
           width: "100%",
+        }}
+        horizontal={true}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          flexDirection: "row",
+          justifyContent: "space-between",
         }}
       >
         <TouchableOpacity
@@ -112,7 +134,7 @@ export const MyAds = ({ navigation }) => {
               color: ads_type == "active" ? "white" : "#7B7B7B",
             }}
           >
-            Активные 2
+            Активные {active_ads.length}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -127,34 +149,46 @@ export const MyAds = ({ navigation }) => {
               color: ads_type == "on_check" ? "white" : "#7B7B7B",
             }}
           >
-            На проверке 0
+            На проверке {checking_ads.length}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={
-            ads_type == "acrchive" ? styles.ad_type_active : styles.ad_type
-          }
-          onPress={() => SetAdsType("acrchive")}
+          style={ads_type == "reject" ? styles.ad_type_active : styles.ad_type}
+          onPress={() => SetAdsType("reject")}
         >
           <Text
             style={{
               textAlign: "center",
-              color: ads_type == "acrchive" ? "white" : "#7B7B7B",
+              color: ads_type == "reject" ? "white" : "#7B7B7B",
+            }}
+          >
+            Отклоненные {reject_ads.length}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={ads_type == "archive" ? styles.ad_type_active : styles.ad_type}
+          onPress={() => SetAdsType("archive")}
+        >
+          <Text
+            style={{
+              textAlign: "center",
+              color: ads_type == "archive" ? "white" : "#7B7B7B",
             }}
           >
             Архив
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
       <View style={{ marginTop: 10 }}>
         {ads_to_show.map((ad) => {
           return (
-            <View
-              key={ad.img}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Ad", { id: ad.idAd })}
+              key={ad.imagePreview}
               style={{ flexDirection: "row", height: 60, marginTop: 10 }}
             >
               <Image
-                source={{ uri: ad.img }}
+                source={{ uri: ad.imagePreview }}
                 style={{ width: 60, height: 60, borderRadius: 15 }}
               />
               <View
@@ -165,13 +199,13 @@ export const MyAds = ({ navigation }) => {
                 }}
               >
                 <Text style={{ fontSize: 16, fontFamily: "LatoMedium" }}>
-                  {ad.title}
+                  {ad.namePet}
                 </Text>
                 <Text style={{ fontFamily: "LatoSemibold", fontWeight: "700" }}>
-                  {ad.much} руб.
+                  {ad.price} руб.
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </View>
@@ -183,7 +217,7 @@ export const MyAds = ({ navigation }) => {
           Разместить объявление
         </Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -200,6 +234,7 @@ const styles = StyleSheet.create({
     padding: 8,
     alignSelf: "center",
     marginTop: 10,
+    marginBottom: 10,
     backgroundColor: "#F6A405",
   },
   link: {
@@ -212,23 +247,27 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   ad_type: {
-    width: "30%",
+    // width: "30%",
     borderColor: "#E7E7E7",
     borderWidth: 1,
     borderRadius: 6,
     height: 30,
-    paddingLeft: 5,
-    paddingRight: 5,
+    paddingLeft: 10,
+    paddingRight: 10,
+    marginLeft: 5,
+    marginRight: 5,
     alignItems: "center",
     justifyContent: "center",
   },
   ad_type_active: {
-    width: "30%",
+    // width: 100,
     backgroundColor: "#F6A405",
     borderRadius: 6,
     height: 30,
-    paddingLeft: 5,
-    paddingRight: 5,
+    paddingLeft: 10,
+    paddingRight: 10,
+    marginLeft: 5,
+    marginRight: 5,
     alignItems: "center",
     justifyContent: "center",
   },

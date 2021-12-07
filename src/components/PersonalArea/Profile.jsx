@@ -24,7 +24,7 @@ export const Profile = observer(({ navigation }) => {
   const [is_vivble_change_password_modal, SetIsVisibleChangePasswordModal] =
     useState(false);
   useEffect(() => {
-    if (!profile.is_profile_load) profile.getProfile();
+    if (!profile.is_profile_load) profile.setProfile();
   }, []);
   const numberPhoneInvalid = (phone) => {
     let regex = /^\d[\d\(\)\ -]{4,14}\d$/;

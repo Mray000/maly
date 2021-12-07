@@ -10,11 +10,22 @@ class Catalog {
   constructor() {
     makeAutoObservable(this, null);
   }
+  convertFrom(from) {
+    let from_convert = {
+      Приют: 1,
+      Питомник: 2,
+      Магазин: 3,
+      "Частное объявление": 4,
+      Передержка: 5,
+      Зоогостиница: 6,
+    };
+    return from.map((el) => from_convert[el]);
+  }
   get GetAds() {
     return api.getAds(
       this.AnimalCategories.id,
       this.AnimalBreed.id,
-      this.from,
+      this.convertFrom(this.from),
       this.city.id,
       this.price_min,
       this.price_max
